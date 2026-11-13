@@ -14,9 +14,21 @@ class Store:
         self._tables: dict[str, list[dict[str, Any]]] = {
             name: [dict(row) for row in rows] for name, rows in SEED_ROWS.items()
         }
+        # 契约摘要、服务契约和审计不属于业务模块列表，单独放在辅助表里，
+        # 这样运营概览的模块统计不会被内部版本契约数据污染。
+        self._aux: dict[str, list[dict[str, Any]]] = {}
 
     def module_names(self) -> list[str]:
         return sorted(self._tables)
+
+    def aux(self, name: str) -> list[dict[str, Any]]:
+        return self._aux.setdefault(name, [])
+
+    def aux_find(self, name: str, key: str, value: Any) -> dict[str, Any] | None:
+        for row in self.aux(name):
+            if row.get(key) == value:
+                return row
+        return None
 
     def rows(self, module: str) -> list[dict[str, Any]]:
         return self._tables.setdefault(module, [])
